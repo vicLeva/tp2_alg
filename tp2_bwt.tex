@@ -1,0 +1,116 @@
+\input{td-common.tex}
+\usepackage{array}
+\usepackage{url}
+\usepackage{moreverb}
+\usepackage{verbatim}
+\usepackage{hyperref}
+
+% Code package
+% ------------
+% Necessary to say where is the output directory ...
+%%%% COMPILATION: pdflatex -synctex=1 -interaction=nonstopmode -shell-escape tp2_burrows_wheeler.tex
+\usepackage{minted}
+\usemintedstyle{one-dark}
+
+\newcommand{\sligne}{\begin{center} \begin{tabular}{c}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\ \hline\\\end{tabular}\end{center}}
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{TP M2 BI \\ Transformée de Burrows Wheeler et FM-index}
+\date{2024}
+\author{V.Levallois, C. Lemaitre, P. Peterlongo}
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%
+
+%%%
+
+\section*{Tableau des suffixes}\label{sec:tableau_des_suffixes}
+
+% section tableau_des_suffixes (end)
+Pour ce TP, nous utiliserons une implémentation du tableau des suffixes disponible ici:
+\url{http://bioinformatique.rennes.inria.fr/tools_karkkainen_sanders.py} adapté de \url{http://code.google.com/p/pysuffix/}.
+
+
+
+Voici un exemple d'utilisation:
+
+\begin{minted}{python}
+from tools_karkkainen_sanders import simple_kark_sort
+s = 'GGCGGCACCGC$'
+sa = simple_kark_sort(s)
+print('i\tSA\tf\tSuffixes')
+for i in range(len(s)): print(f'{i}\t{sa[i]}\t{s[sa[i]]}\t{s[sa[i]:]}')
+\end{minted}
+
+\noindent Produira la sortie suivante:
+\begin{verbatim}
+i	SA	f	Suffixes
+0	11	$	$
+1	6	A	ACCGC$
+2	10	C	C$
+3	5	C	CACCGC$
+4	7	C	CCGC$
+5	8	C	CGC$
+6	2	C	CGGCACCGC$
+7	9	G	GC$
+...
+\end{verbatim}
+
+\section*{Implementation BWT}
+
+\qu{}Codez (et testez...) la fonction $get\_bwt(s,sa)$ renvoyant la transformée de burrows wheeler $bwt$ du texte $s$ dont le $sa$ a été calculé.
+
+\qu{}Codez la fonction $get\_n(bwt)$ renvoyant un dictionnaire $n$ tel que $n[\alpha]$=nombre d'occurences de caractères plus petits que $\alpha$ dans $bwt$. C'est aussi l'indice de la ligne où apparait le premier suffixe débutant par $\alpha$. Par exemple $[G] = 7$.
+
+\qu{}Codez la fonction $get\_r(bwt)$ renvoyant un tableau tel que $r[i]$= rang dans $bwt$ du caractère $bwt[i]$. Exemple : $r[3]$ est égal à 2 car $bwt[3]$ est le deuxième '$G$' apparaissant dans $bwt$.
+
+% Formalisation:
+% \[
+%     r [i] = \sum_{i\leq l}\left\{ \begin{array}{ll} 0 \text{ if }s[sa[i]]\neq s[sa[l]] \\ 1\text{ else }\end{array}\right.
+% \]
+
+\qu{}Codez la fonction $left\_first (\alpha, k, n)$ (appelée $LF$ en cours/TD) qui renvoie la ligne $l$ telle que $sa[l]$ est la position du $k^{\text{ième}}$ suffixe (ordonnés dans l'ordre lexico) débutant par le caractère $\alpha$. Plus simplement, avec $f$ tel que $f[i]=s[sa[i]]$, $lf (\alpha; k)$ est la ligne où le $k^{\text{ième}}$ $\alpha$ apparaît dans $f$.
+
+\qu{}Codez la fonction $bwt\_2\_seq(bwt, n, r)$ qui retrouve en temps linéaire la séquence $s$ dont la $bwt$ est originaire.
+
+\qu{}Codez la fonction $contains(p, bwt, n, r)$ qui renvoie \emph{true} si $p$ apparait dans la séquence $s$ dont la $bwt$ est originaire, \emph{false} sinon.
+
+\qu{}Codez la fonction $nb\_occurrences(p, bwt, n, r)$ qui renvoie le nombre d'occurrences de $p$ dans la séquence $s$ dont la $bwt$ est originaire, \emph{false} sinon.
+%\qu{}Codez (et tester) la fonction $GET\_LCP(S,SA)$ renvoyant $LCP_S$
+
+\section*{Validations sur des exemples \emph{jouets} (e.g. $s=GGCGGCACCGC\$$)}
+
+\qu{} Vérifiez le plus de conditions possibles (recherche du premier ou dernier mot du texte indexé, recherche du mot vide, recherche d'un mot plus long que le texte, ...)
+
+\section*{Application sur une portion du génome d'E. coli.}
+ Télécharger le fichier \url{bioinformatique.rennes.inria.fr/data/ecoli_sample.fa} qui continent les premiers 150 kbp d'E. coli.
+ Construire la `BWT` sur la sequence contenue dans ce fichier.
+
+\qu{} Recherchez par exemple le pattern `CGCTCTGTGTGACAAGCCGGAAACCGCCCAG` (une sous séquence des premiers 150 kbp d'E. ecoli) via la BWT. 
+
+\qu{} Appliquez l'algo naif et l'algo de Karp Rabin  sur ces mêmes données et comparez les résultats. 
+
+\section*{Pire et meilleur des cas}
+
+\qu{} Rappelez quel est le pire des cas des méthodes évoquées précédemment. Proposez des tests et des résutlats.
+
+\qu{} Rappelez quel est le meilleur des cas des méthodes évoquées précédemment. Proposez des tests et des résutlats.
+
+% \qu{} Vous pourrez tester la recherche de divers patterns :
+% \begin{itemize}
+% 	\item Le premier et le dernier pattern d'une taille fixée dans les premiers 150 kbp d'E. ecoli.
+% \end{itemize}
+
+\section*{Bonus}
+\qu{}\textbf{[Bonus]} Codez la fonction $occurs(s, sa, p):$ indiquant si $p$ a des occurrences dans $s$ en utilisation une approche dichotomique (en $O(|p|\cdot \log|s|)$).
+
+\qu{}\textbf{[Bonus]} Ajoutez les résultats par recherche dicchotomique à tous les résultats précédemment obtenus. 
+
+\qu{}\textbf{[Bonus (facile)]} Codez la fonction $get\_occurrences(p, bwt, n, r, sa)$ qui renvoie la liste des occurrences de $p$ dans la séquence $s$ dont la $bwt$ est originaire.
+
+\qu{}\textbf{[Bonus (délicat)]} Proposez et implémentez un moyen de sous échantillonner les ranks pour limiter l'impact mémoire, au prix d'une augmentation des temps de query.
+
+
+
+\end{document}
